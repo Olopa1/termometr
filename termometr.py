@@ -10,6 +10,23 @@ import sqlite3
 
 arduino = serial.Serial('COM3',9600,timeout=1) #łączenie z portem szeregowym / USB
 
+conect = sqlite3.Connection('temp.db')
+conect.row_factory = sqlite3.Row        #utworzenie bazy danych która będzie zbierać informacje z portu szeregowego 
+                                            #a konkretniej informację o temperaturzę
+cursor = conect.cursor()                #utworzenie kursora w bazie danych||||20 15
+
+#cursor.execute("DROP TABLE IF EXISTS Temp_station;") #Usuwanie tabeli
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS Temp_station(    
+    id INTEGER PRIMARY KEY ASC AUTOINCREMENT,   
+    Temp TEXT,
+    Hours INTEGER,
+    Minutes INTEGER,
+    Month INTEGER,
+    Day INTEGER
+    )""")#Stworzona nowa tabela jeśli jeeszcze nie istnieje 
+
 while True:
     
     time_1 = time.localtime()
@@ -51,10 +68,15 @@ while True:
         data_read.decode()                  #odczytanie informacji z portu szeregowego
         print(data_read)
     
-    conect = sqlite3.Connection('temp.db')
-    conect.row_factory = sqlite3.Row        #utworzenie bazy danych która będzie zbierać informacje z portu szeregowego 
-                                            #a konkretniej informację o temperaturzę
-    cursor = conect.cursor()                #utworzenie kursora w bazie danych
+    print("aktualna godzina z sekundami",full_hour)
+
+
+    save = mint%10
+
+    if save == 0 and secs == 0:
+        cursor.execute("INSERT INTO Temp_station VALUES(NULL, ?, ?, ?, ?, ?);", (data_read[15:17],hrs,mint,manth,day))
+        cursor.execute("SELECT * FROM Temp_station") #co 10 minut dodawanie nowego rekordu do tabeli
+        conect.commit()
 
 
     
